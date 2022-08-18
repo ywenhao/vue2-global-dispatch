@@ -57,7 +57,7 @@ Vue.prototype.globalDispatch = function dispatch(eventKey, ...args) {
   if (handler) {
     return handler(...args);
   }
-  console.error("实例已销毁，该方法不存在!");
+  console.error("该方法未找到!");
 };
 
 export default globalDispatch;

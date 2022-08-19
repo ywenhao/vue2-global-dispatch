@@ -1,6 +1,7 @@
 <template>
   <div id="app">
     <router-view />
+    <router-view />
     <button @click="onClick">click</button>
   </div>
 </template>
@@ -10,7 +11,12 @@ export default {
   name: "app",
   methods: {
     onClick() {
-      this.globalDispatch("src/views/IndexView.vue:test", "试试", "看看");
+      const res = this.globalDispatch(
+        { target: "src/views/IndexView.vue:test" },
+        1,
+        2
+      );
+      console.log(res);
     }
   }
 };

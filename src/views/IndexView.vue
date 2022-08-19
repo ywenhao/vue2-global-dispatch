@@ -1,17 +1,24 @@
 <template>
-  <div class=""></div>
+  <div class="">
+    <div>v1:{{ v1 }}</div>
+    <div>v2:{{ v2 }}</div>
+  </div>
 </template>
 
 <script>
 export default {
   name: "index-view",
   data() {
-    return {};
+    return {
+      v1: 1,
+      v2: 2
+    };
   },
   methods: {
     test(v1, v2) {
-      this.$router;
-      console.log(v1, v2, this);
+      this.v1 += v1;
+      this.v2 += v2;
+      return [this.v1, this.v2];
     }
   }
 };

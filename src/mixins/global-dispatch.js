@@ -37,6 +37,7 @@ function addEvents(filePath, vm, eKey = DEFAULT_E_KEY) {
       handler = handler.bind(vm);
       const eventKey = `${filePath}:${key}`;
       const event = { eKey, handler };
+
       if (events[eventKey] && events[eventKey].length) {
         events[eventKey].push(event);
       } else {
@@ -74,7 +75,9 @@ Vue.prototype.globalDispatch = function dispatch(params, ...args) {
     eventKey = params.target;
     eKey = params.eKey ?? DEFAULT_E_KEY;
   }
+
   const eKeyMsg = eKey !== DEFAULT_E_KEY ? `eKey:${eKey},` : "";
+
   if (
     !eventKey ||
     typeof eventKey !== "string" ||
@@ -89,6 +92,7 @@ Vue.prototype.globalDispatch = function dispatch(params, ...args) {
     if (results.length === 1) return results[0];
     return results.map(result => ({ eKey, result }));
   }
+
   const method = eventKey.split(":")[1];
   throw new Error(`${eKeyMsg}method:${method},该方法未找到!`);
 };

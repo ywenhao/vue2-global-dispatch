@@ -13,12 +13,12 @@ const events = {};
  */
 const globalDispatch = {
   created() {
-    const filePath = this.$options.__file;
+    const filePath = this.$options.__file ?? this.$options.__filePath;
     const eKey = this.$attrs.eKey;
     filePath && addEvents(filePath, this, eKey);
   },
   destroyed() {
-    const filePath = this.$options.__file;
+    const filePath = this.$options.__file ?? this.$options.__filePath;
     const eKey = this.$attrs.eKey;
     filePath && removeEvents(filePath, eKey);
   }

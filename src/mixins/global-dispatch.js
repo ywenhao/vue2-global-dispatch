@@ -54,10 +54,7 @@ function addEvents(filePath, vm, eKey = DEFAULT_E_KEY) {
 function removeEvents(filePath, eKey = DEFAULT_E_KEY) {
   Object.keys(events).forEach(key => {
     if (key.startsWith(filePath)) {
-      const handlers = events[key].filter(v => v.eKey === eKey);
-      handlers.forEach((event, index) => {
-        event.eKey === eKey && handlers.splice(index, 1);
-      });
+      events[key] = events[key].filter(v => v.eKey !== eKey);
     }
   });
 }

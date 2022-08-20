@@ -1,9 +1,18 @@
 const fs = require("fs");
 const path = require("path");
 
+/**
+ * @typedef {import("webpack/lib/Compiler")} Compiler
+ */
+
+const pluginName = "global-dispatch";
 class TransformFilePathPlugin {
+  /**
+   * @param {Compiler} compiler
+   * @returns {void}
+   */
   apply(compiler) {
-    compiler.hooks.emit.tap("vue-loader", compilation => {
+    compiler.hooks.compilation.tap(pluginName, compilation => {
       console.log(compilation);
       writeEventKeys();
     });
@@ -63,4 +72,4 @@ function getSrcPath(p) {
   return path.resolve(__dirname, "../" + p);
 }
 
-module.exports = { TransformFilePathPlugin, writeEventKeys };
+module.exports = { TransformFilePathPlugin };

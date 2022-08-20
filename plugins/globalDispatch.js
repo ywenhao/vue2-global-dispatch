@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const acorn = require("acorn");
 
 /**
  * @typedef {import("webpack/lib/Compiler")} Compiler
@@ -29,10 +30,45 @@ function writeEventKeys() {
  * @param {string[]} paths 路径集合
  */
 function writeVueKeyPaths(paths) {
+  const keys = [];
   paths.forEach(p => {
-    const content = fs.readFileSync(getSrcPath(p), "utf-8");
-    console.log(content);
+    let content = fs.readFileSync(getSrcPath(p), "utf-8");
+    const scriptMatch = content.match(/<script/g);
+    if (!scriptMatch) return;
+
+    if (scriptMatch.length === 1) {
+      const startIndex = content.indexOf("export default");
+      const endIndex = content.indexOf("</script>");
+      content = content.substring(startIndex, endIndex);
+
+      const ast = acorn.parse(content, { sourceType: "module" });
+      const defaultExportAst = ast.body.find(
+        v => v.type === "ExportDefaultDeclaration"
+      );
+
+      let properties;
+      if (defaultExportAst.declaration.type === "CallExpression") {
+        properties = defaultExportAst.declaration.arguments[0].properties;
+      }
+      if (
+        defaultExportAst.declaration.type === "ObjectExpression" &&
+        Array.isArray(defaultExportAst.declaration.properties)
+      ) {
+        properties = defaultExportAst.declaration.properties;
+      }
+
+      const methods = properties.find(v => v.key.name === "methods");
+      if (!methods) return;
+
+      if (methods.value.properties.length) {
+        const methodNames = methods.value.properties.map(
+          v => `${p}:${v.key.name}`
+        );
+        keys.push(...methodNames);
+      }
+    }
   });
+  console.log(keys);
 }
 
 /**

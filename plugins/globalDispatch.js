@@ -20,7 +20,7 @@ function writeEventKeys() {
  * @param {string[]} paths 路径集合
  */
 function writeVueFilePaths(paths) {
-  const reg = /export default.*{/;
+  const reg = /export default.*?{/;
   paths.forEach(p => {
     const content = fs.readFileSync(getSrcPath(p), "utf-8");
     const writeContent = content.replace(

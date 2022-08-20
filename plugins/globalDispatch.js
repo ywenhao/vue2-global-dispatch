@@ -6,6 +6,7 @@ const path = require("path");
  */
 
 const pluginName = "global-dispatch";
+
 class TransformFilePathPlugin {
   /**
    * @param {Compiler} compiler

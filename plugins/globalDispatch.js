@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-class TransformFilePath {
+class TransformFilePathPlugin {
   apply(compiler) {
     compiler.hooks.emit.tap("vue-loader", compilation => {
       console.log(compilation);
@@ -28,11 +28,13 @@ function getFilePath(p = "src") {
 }
 
 function getDirs(paths, path) {
-  return paths.filter(v => !v.includes(".")).map(v => `${path}/${v}`);
+  return paths
+    .map(v => `${path}/${v}`)
+    .filter(v => !fs.statSync(v).isDirectory());
 }
 
 function getVueFiles(paths, path) {
   return paths.filter(v => v.endsWith(".vue")).map(v => `${path}/${v}`);
 }
 
-module.exports = { TransformFilePath, writeEventKeys };
+module.exports = { TransformFilePathPlugin, writeEventKeys };

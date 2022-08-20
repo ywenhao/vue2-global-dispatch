@@ -30,7 +30,7 @@ function getFilePath(p = "src") {
 function getDirs(paths, path) {
   return paths
     .map(v => `${path}/${v}`)
-    .filter(v => !fs.statSync(v).isDirectory());
+    .filter(v => fs.statSync(v).isDirectory());
 }
 
 function getVueFiles(paths, path) {

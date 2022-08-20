@@ -1,12 +1,15 @@
 const fs = require("fs");
 const path = require("path");
 const acorn = require("acorn");
+const prettier = require("prettier");
+const prettierConfig = require("../prettier.config");
 
 /**
  * @typedef {import("webpack/lib/Compiler")} Compiler
  */
 
-const pluginName = "global-dispatch";
+const PLUGIN_NAME = "global-dispatch";
+const KEYS_PATH = path.resolve(__dirname, "../types/event-keys.d.ts");
 
 class TransformFilePathPlugin {
   /**
@@ -14,7 +17,7 @@ class TransformFilePathPlugin {
    * @returns {void}
    */
   apply(compiler) {
-    compiler.hooks.compilation.tap(pluginName, () => {
+    compiler.hooks.done.tap(PLUGIN_NAME, () => {
       writeEventKeys();
     });
   }
@@ -26,49 +29,67 @@ function writeEventKeys() {
 }
 
 /**
+ * 缓存内容，防止重复写入
+ */
+let keysContentCache = fs.readFileSync(KEYS_PATH, "utf-8");
+
+/**
  * 写入__filePath到type Key文件
  * @param {string[]} paths 路径集合
  */
 function writeVueKeyPaths(paths) {
+  let keysContent = "export type EventKeys =";
   const keys = [];
+
   paths.forEach(p => {
     let content = fs.readFileSync(getSrcPath(p), "utf-8");
     const scriptMatch = content.match(/<script/g);
     if (!scriptMatch) return;
 
-    if (scriptMatch.length === 1) {
-      const startIndex = content.indexOf("export default");
-      const endIndex = content.indexOf("</script>");
-      content = content.substring(startIndex, endIndex);
+    const startIndex = content.indexOf("export default");
+    if (startIndex < 0) return;
 
-      const ast = acorn.parse(content, { sourceType: "module" });
-      const defaultExportAst = ast.body.find(
-        v => v.type === "ExportDefaultDeclaration"
+    const endIndex = content.indexOf("</script>");
+    content = content.substring(startIndex, endIndex);
+
+    const ast = acorn.parse(content, { sourceType: "module" });
+    const defaultExportAst = ast.body.find(
+      v => v.type === "ExportDefaultDeclaration"
+    );
+
+    let properties;
+    if (defaultExportAst.declaration.type === "CallExpression") {
+      properties = defaultExportAst.declaration.arguments[0].properties;
+    }
+    if (
+      defaultExportAst.declaration.type === "ObjectExpression" &&
+      Array.isArray(defaultExportAst.declaration.properties)
+    ) {
+      properties = defaultExportAst.declaration.properties;
+    }
+
+    const methods = properties.find(v => v.key.name === "methods");
+    if (!methods) return;
+
+    if (methods.value.properties.length) {
+      const methodNames = methods.value.properties.map(
+        v => `${p}:${v.key.name}`
       );
-
-      let properties;
-      if (defaultExportAst.declaration.type === "CallExpression") {
-        properties = defaultExportAst.declaration.arguments[0].properties;
-      }
-      if (
-        defaultExportAst.declaration.type === "ObjectExpression" &&
-        Array.isArray(defaultExportAst.declaration.properties)
-      ) {
-        properties = defaultExportAst.declaration.properties;
-      }
-
-      const methods = properties.find(v => v.key.name === "methods");
-      if (!methods) return;
-
-      if (methods.value.properties.length) {
-        const methodNames = methods.value.properties.map(
-          v => `${p}:${v.key.name}`
-        );
-        keys.push(...methodNames);
-      }
+      keys.push(...methodNames);
     }
   });
-  console.log(keys);
+
+  keysContent += keys.map(v => `'${v}'`).join("|") || "string";
+
+  keysContent = prettier.format(keysContent, {
+    ...prettierConfig,
+    parser: "typescript"
+  });
+
+  if (keysContentCache !== keysContent) {
+    keysContentCache = keysContent;
+    fs.writeFileSync(KEYS_PATH, keysContent);
+  }
 }
 
 /**

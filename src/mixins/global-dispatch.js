@@ -62,7 +62,7 @@ function removeEvents(filePath, eKey = DEFAULT_E_KEY) {
 
 /**
  *
- * @param {import("types/event-keys").EventKeys | import("types/shims-vue").EventParams} params
+ * @param {import("../../types/event-keys").EventKeys | import("../../types/shims-vue").EventParams} params
  * @param  {...any} args
  * @returns
  */

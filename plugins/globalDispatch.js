@@ -13,8 +13,7 @@ class TransformFilePathPlugin {
    * @returns {void}
    */
   apply(compiler) {
-    compiler.hooks.compilation.tap(pluginName, compilation => {
-      console.log(compilation);
+    compiler.hooks.compilation.tap(pluginName, () => {
       writeEventKeys();
     });
   }
@@ -22,22 +21,17 @@ class TransformFilePathPlugin {
 
 function writeEventKeys() {
   const vueFilePaths = getFilePath();
-  writeVueFilePaths(vueFilePaths);
+  writeVueKeyPaths(vueFilePaths);
 }
 
 /**
- * 写入__filePath到文件
+ * 写入__filePath到type Key文件
  * @param {string[]} paths 路径集合
  */
-function writeVueFilePaths(paths) {
-  const reg = /export default.*?{/;
+function writeVueKeyPaths(paths) {
   paths.forEach(p => {
     const content = fs.readFileSync(getSrcPath(p), "utf-8");
-    const writeContent = content.replace(
-      reg,
-      $0 => `${$0} __filePath: "${p}",`
-    );
-    console.log(writeContent);
+    console.log(content);
   });
 }
 

@@ -1,4 +1,6 @@
 module.exports = function(content) {
+  if (process.env.NODE_ENV === "development") return content;
+
   const filePath = this.resourcePath
     .replace(/\\/g, "/")
     .replace(/(.*)?src/, "src");

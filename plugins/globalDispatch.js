@@ -18,7 +18,7 @@ class TransformFilePathPlugin {
    */
   apply(compiler) {
     compiler.hooks.done.tap(PLUGIN_NAME, () => {
-      writeEventKeys();
+      process.env.NODE_ENV === "development" && writeEventKeys();
     });
   }
 }

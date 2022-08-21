@@ -14,9 +14,6 @@ export default {
       v2: 2
     };
   },
-  mounted() {
-    console.log(this);
-  },
   methods: {
     test(v1, v2) {
       this.v1 += v1;

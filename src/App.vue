@@ -1,7 +1,7 @@
 <template>
   <div id="app">
-    <router-view />
     <router-view v-if="visible" />
+    <router-view />
     <button @click="onClick">click</button>
   </div>
 </template>

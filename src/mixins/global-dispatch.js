@@ -3,7 +3,7 @@ import Vue from "vue";
 const DEFAULT_E_KEY = "__default";
 /**
  * 方法合集
- * @type {Record<string, {eKey: string; handler: function[]}[]>}
+ * @type {Record<string, {eKey: string; handler: function}[]>}
  */
 const events = {};
 
@@ -19,10 +19,8 @@ const globalDispatch = {
     filePath && addEvents(filePath, this, eKey);
   },
   destroyed() {
-    const attrs = this.$attrs;
-    const eKey = attrs.eKey ?? attrs["e-key"];
     const filePath = this.$options.__file ?? this.$options.__filePath;
-    filePath && removeEvents(filePath, eKey);
+    filePath && removeEvents(filePath, this);
   }
 };
 
@@ -37,6 +35,7 @@ function addEvents(filePath, vm, eKey = DEFAULT_E_KEY) {
   if (methods) {
     Object.entries(methods).forEach(([key, handler]) => {
       handler = handler.bind(vm);
+      handler.vm = vm;
       const eventKey = `${filePath}:${key}`;
       const event = { eKey, handler };
 
@@ -52,12 +51,12 @@ function addEvents(filePath, vm, eKey = DEFAULT_E_KEY) {
 /**
  * 移除方法
  * @param {string} filePath 获取到的路径
- * @param {string=} eKey event key
+ * @param {Vue} vm vue组件实例
  */
-function removeEvents(filePath, eKey = DEFAULT_E_KEY) {
+function removeEvents(filePath, vm) {
   Object.keys(events).forEach(key => {
     if (key.startsWith(filePath)) {
-      events[key] = events[key].filter(v => v.eKey !== eKey);
+      events[key] = events[key].filter(v => v.handler.vm !== vm);
     }
   });
 }

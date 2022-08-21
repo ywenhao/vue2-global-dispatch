@@ -1,6 +1,6 @@
 // const { TransformFilePathPlugin } = require("./plugins/globalDispatch");
 const path = require("path");
-const { TransformFilePathPlugin } = require("./plugins/globalDispatch");
+const { TransformFilePathPlugin } = require("./plugins/global-dispatch");
 /**
  * @type {import('@vue/cli-service').ProjectOptions}
  */

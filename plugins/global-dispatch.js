@@ -49,7 +49,7 @@ function writeVueKeyPaths(paths) {
     const startIndex = content.indexOf("export default");
     if (startIndex < 0) return;
 
-    const endIndex = content.indexOf("</script>");
+    const endIndex = content.indexOf("</script>", startIndex);
     content = content.substring(startIndex, endIndex);
 
     const ast = acorn.parse(content, { sourceType: "module" });

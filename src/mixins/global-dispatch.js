@@ -3,7 +3,7 @@ import Vue from "vue";
 const DEFAULT_E_KEY = "__default";
 /**
  * 方法合集
- * @type {Record<string, {eKey: string; handler: function}[]>}
+ * @type {Record<string, {eKey: string; handler: function[]}[]>}
  */
 const events = {};
 

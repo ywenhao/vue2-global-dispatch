@@ -98,4 +98,12 @@ Vue.prototype.globalDispatch = function dispatch(params, ...args) {
   throw new Error(`${eKeyMsg}method:${method},该方法未找到!`);
 };
 
-export default globalDispatch;
+export default {
+  /**
+   * install globalDispatch
+   * @param {Vue.VueConstructor} Vue
+   */
+  install(Vue) {
+    Vue.mixin(globalDispatch);
+  }
+};

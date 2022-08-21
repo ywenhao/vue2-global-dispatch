@@ -5,7 +5,7 @@ import globalDispatch from "./mixins/global-dispatch";
 
 Vue.config.productionTip = false;
 
-Vue.mixin(globalDispatch);
+Vue.use(globalDispatch);
 
 new Vue({
   router,

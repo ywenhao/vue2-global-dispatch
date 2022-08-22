@@ -1,5 +1,5 @@
 const path = require("path");
-const { TransformFilePathPlugin } = require("./plugins/global-dispatch");
+const VueFilePathPlugin = require("./plugins/vue-file-path-plugin");
 /**
  * @type {import('@vue/cli-service').ProjectOptions}
  */
@@ -7,7 +7,7 @@ module.exports = {
   lintOnSave: false,
   productionSourceMap: false,
   configureWebpack: {
-    plugins: [new TransformFilePathPlugin()],
+    plugins: [new VueFilePathPlugin()],
     module: {
       rules: [
         {

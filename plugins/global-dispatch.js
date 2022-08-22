@@ -1,127 +1,109 @@
-const fs = require("fs");
-const path = require("path");
-const acorn = require("acorn");
-const prettier = require("prettier");
-const prettierConfig = require("../prettier.config");
+import Vue from "vue";
+
+const DEFAULT_E_KEY = "__default";
+/**
+ * 方法合集
+ * @type {Record<string, {eKey: string; handler: function}[]>}
+ */
+const events = {};
 
 /**
- * @typedef {import("webpack/lib/Compiler")} Compiler
+ * 全局调用event的mixin
+ * @type {Vue & import("vue").ComponentOptions}
  */
+const globalDispatch = {
+  created() {
+    const attrs = this.$attrs;
+    const eKey = attrs.eKey ?? attrs["e-key"];
+    const filePath = this.$options.__file ?? this.$options.__filePath;
+    filePath && addEvents(filePath, this, eKey);
+  },
+  destroyed() {
+    const filePath = this.$options.__file ?? this.$options.__filePath;
+    filePath && removeEvents(filePath, this);
+  }
+};
 
-const PLUGIN_NAME = "global-dispatch";
-const KEYS_PATH = path.resolve(__dirname, "../types/event-keys.d.ts");
+/**
+ * 监听方法
+ * @param {string} filePath 获取到的路径
+ * @param {Vue} vm vue组件实例
+ * @param {string=} eKey event key
+ */
+function addEvents(filePath, vm, eKey = DEFAULT_E_KEY) {
+  const methods = vm.$options.methods;
+  if (methods) {
+    Object.entries(methods).forEach(([key, handler]) => {
+      handler = handler.bind(vm);
+      handler.vm = vm;
+      const eventKey = `${filePath}:${key}`;
+      const event = { eKey, handler };
 
-class TransformFilePathPlugin {
-  /**
-   * @param {Compiler} compiler
-   * @returns {void}
-   */
-  apply(compiler) {
-    compiler.hooks.done.tap(PLUGIN_NAME, () => {
-      process.env.NODE_ENV === "development" && writeEventKeys();
+      if (events[eventKey] && events[eventKey].length) {
+        events[eventKey].push(event);
+      } else {
+        events[eventKey] = [event];
+      }
     });
   }
 }
 
-function writeEventKeys() {
-  const vueFilePaths = getFilePath();
-  writeVueKeyPaths(vueFilePaths);
-}
-
 /**
- * 缓存内容，防止重复写入
+ * 移除方法
+ * @param {string} filePath 获取到的路径
+ * @param {Vue} vm vue组件实例
  */
-let keysContentCache = fs.readFileSync(KEYS_PATH, "utf-8");
-
-/**
- * 写入__filePath到type Key文件
- * @param {string[]} paths 路径集合
- */
-function writeVueKeyPaths(paths) {
-  let keysContent = "export type EventKeys =";
-  const keys = [];
-
-  paths.forEach(p => {
-    let content = fs.readFileSync(getSrcPath(p), "utf-8");
-    const scriptMatch = content.match(/<script/g);
-    if (!scriptMatch) return;
-
-    const startIndex = content.indexOf("export default");
-    if (startIndex < 0) return;
-
-    const endIndex = content.indexOf("</script>", startIndex);
-    content = content.substring(startIndex, endIndex);
-
-    const ast = acorn.parse(content, { sourceType: "module" });
-    const defaultExportAst = ast.body.find(
-      v => v.type === "ExportDefaultDeclaration"
-    );
-
-    let properties;
-    if (defaultExportAst.declaration.type === "CallExpression") {
-      properties = defaultExportAst.declaration.arguments[0].properties;
-    }
-    if (
-      defaultExportAst.declaration.type === "ObjectExpression" &&
-      Array.isArray(defaultExportAst.declaration.properties)
-    ) {
-      properties = defaultExportAst.declaration.properties;
-    }
-
-    const methods = properties.find(v => v.key.name === "methods");
-    if (!methods) return;
-
-    if (methods.value.properties.length) {
-      const methodNames = methods.value.properties.map(
-        v => `${p}:${v.key.name}`
-      );
-      keys.push(...methodNames);
+function removeEvents(filePath, vm) {
+  Object.keys(events).forEach(key => {
+    if (key.startsWith(filePath)) {
+      events[key] = events[key].filter(v => v.handler.vm !== vm);
     }
   });
-
-  keysContent += keys.map(v => `'${v}'`).join("|") || "string";
-
-  keysContent = prettier.format(keysContent, {
-    ...prettierConfig,
-    parser: "typescript"
-  });
-
-  if (keysContentCache !== keysContent) {
-    keysContentCache = keysContent;
-    fs.writeFileSync(KEYS_PATH, keysContent);
-  }
 }
 
 /**
  *
- * @param {string=} p 路径
- * @returns {string[]} 路径集合
+ * @param {import("../../types/event-keys").EventKeys | import("../../types/shims-vue").EventParams} params
+ * @param  {...any} args
+ * @returns
  */
-function getFilePath(p = "src") {
-  const paths = fs.readdirSync(getSrcPath(p), "utf-8");
-  const vueFiles = getVueFiles(paths, p);
-  const dirs = getDirs(paths, p);
-
-  if (dirs.length) {
-    dirs.forEach(dir => {
-      vueFiles.push(...getFilePath(dir));
-    });
+Vue.prototype.globalDispatch = function dispatch(params, ...args) {
+  let eventKey,
+    eKey = DEFAULT_E_KEY;
+  if (typeof params === "string") {
+    eventKey = params;
+  } else if (typeof params === "object") {
+    eventKey = params.target;
+    eKey = params.eKey ?? DEFAULT_E_KEY;
   }
-  return vueFiles;
-}
 
-function getDirs(paths, path) {
-  return paths
-    .map(v => `${path}/${v}`)
-    .filter(v => fs.statSync(v).isDirectory());
-}
+  const eKeyMsg = eKey !== DEFAULT_E_KEY ? `eKey:${eKey},` : "";
 
-function getVueFiles(paths, path) {
-  return paths.filter(v => v.endsWith(".vue")).map(v => `${path}/${v}`);
-}
+  if (
+    !eventKey ||
+    typeof eventKey !== "string" ||
+    !/^[^:]*:[^:](.*){1}$/.test(eventKey)
+  ) {
+    throw new Error(`${eKeyMsg}eventKey:${eventKey}, 参数不正确!`);
+  }
 
-function getSrcPath(p) {
-  return path.resolve(__dirname, "../" + p);
-}
+  const handlers = events[eventKey]?.filter(v => v.eKey === eKey);
+  if (handlers && handlers.length) {
+    const results = handlers.map(v => v.handler(...args));
+    if (results.length === 1) return results[0];
+    return results.map(result => ({ eKey, result }));
+  }
 
-module.exports = { TransformFilePathPlugin };
+  const method = eventKey.split(":")[1];
+  throw new Error(`${eKeyMsg}method:${method},该方法未找到!`);
+};
+
+export default {
+  /**
+   * install globalDispatch
+   * @param {Vue.VueConstructor} Vue
+   */
+  install(Vue) {
+    Vue.mixin(globalDispatch);
+  }
+};

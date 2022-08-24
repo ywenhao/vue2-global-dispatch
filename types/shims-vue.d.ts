@@ -7,8 +7,6 @@ export type EventParams = { target: EventKeys; eKey: string };
 function globalDispatch(eventKey: EventKeys, ...args: any[]): any;
 function globalDispatch(eventParams: EventParams, ...args: any[]): any;
 
-const vm = new Vue();
-
 interface EventBus {
   on: typeof bus.$on;
   emit: typeof bus.$emit;

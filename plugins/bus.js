@@ -19,7 +19,6 @@ function on(event, callback) {
     throwError(event);
 
     bus.$on(event, callback);
-    console.log(bus._events);
   } catch (e) {
     throw new Error(e);
   }

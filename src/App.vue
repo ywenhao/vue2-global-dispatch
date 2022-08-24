@@ -14,15 +14,22 @@ export default {
       visible: true
     };
   },
+  mounted() {
+    this.$bus.on(["test", "aa"], () => {
+      console.log({ vm: this });
+    });
+  },
   methods: {
     onClick() {
-      const res = this.globalDispatch(
-        { target: "src/views/IndexView.vue:test" },
-        1,
-        2
-      );
-      this.visible = !this.visible;
-      console.log(res);
+      // const res = this.globalDispatch(
+      //   { target: "src/views/IndexView.vue:test" },
+      //   1,
+      //   2
+      // );
+      // this.visible = !this.visible;
+      // console.log(res);
+      this.$bus.emit("aa");
+      this.$bus.off("aa");
     }
   }
 };
